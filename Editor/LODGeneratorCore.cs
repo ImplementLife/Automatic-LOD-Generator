@@ -138,8 +138,8 @@ namespace Plugins.AutoLODGenerator.Editor
                     }
                     else
                     {
-                        // Simplify mesh for this LOD level
-                        lodMesh = SimplifyMesh(originalMesh, quality, simplificationOptions);
+                        // Simplify mesh for this LOD level (supports per-submesh settings)
+                        lodMesh = SimplifyMultiSubMesh(originalMesh, i, settings, originalMaterials);
                         lodMesh.name = $"{originalMesh.name}_LOD{i}";
                     }
 
@@ -711,6 +711,108 @@ namespace Plugins.AutoLODGenerator.Editor
             meshSimplifier.SimplifyMesh(quality);
 
             return meshSimplifier.ToMesh();
+        }
+
+        /// <summary>
+        /// Simplifies a mesh that has multiple submeshes with individual settings per submesh,
+        /// or falls back to standard single-mesh simplification.
+        /// </summary>
+        public static Mesh SimplifyMultiSubMesh(Mesh sourceMesh, int lodIndex, LODGeneratorSettings settings, Material[] materials)
+        {
+            if (sourceMesh == null)
+                throw new ArgumentNullException(nameof(sourceMesh));
+
+            if (settings == null || !settings.usePerSubMeshSettings || sourceMesh.subMeshCount <= 1)
+            {
+                float quality = settings != null ? settings.GetQualityFactor(lodIndex) : (lodIndex == 0 ? 1.0f : 0.5f);
+                SimplificationOptions? options = settings?.CreateSimplificationOptions();
+                return SimplifyMesh(sourceMesh, quality, options);
+            }
+
+            if (lodIndex == 0)
+                return Object.Instantiate(sourceMesh);
+
+            var simplifiedSubMeshes = new List<(Mesh subMesh, int subMeshIndex)>();
+
+            for (int i = 0; i < sourceMesh.subMeshCount; i++)
+            {
+                SubMeshLODSettings subSettings = null;
+                if (settings.subMeshSettings != null)
+                {
+                    subSettings = settings.subMeshSettings.Find(s => s.subMeshIndex == i);
+                }
+
+                float subQuality = subSettings != null
+                    ? subSettings.GetQualityFactor(lodIndex, settings.GetQualityFactor(lodIndex))
+                    : settings.GetQualityFactor(lodIndex);
+
+                SimplificationOptions subOptions = subSettings != null
+                    ? subSettings.CreateSimplificationOptions(settings)
+                    : settings.CreateSimplificationOptions();
+
+                Mesh subMeshExtract = ExtractSubMesh(sourceMesh, i);
+                if (subMeshExtract == null || subMeshExtract.vertexCount == 0 || subMeshExtract.GetTriangles(0).Length == 0)
+                {
+                    if (subMeshExtract != null) Object.DestroyImmediate(subMeshExtract);
+                    continue;
+                }
+
+                Mesh simplifiedSub = SimplifyMesh(subMeshExtract, subQuality, subOptions);
+                Object.DestroyImmediate(subMeshExtract);
+
+                simplifiedSubMeshes.Add((simplifiedSub, i));
+            }
+
+            Mesh combinedMesh = CombineSubMeshesIntoMesh(simplifiedSubMeshes, sourceMesh.name + $"_LOD{lodIndex}");
+
+            foreach (var item in simplifiedSubMeshes)
+            {
+                if (item.subMesh != null)
+                    Object.DestroyImmediate(item.subMesh);
+            }
+
+            return combinedMesh;
+        }
+
+        private static Mesh ExtractSubMesh(Mesh sourceMesh, int subMeshIndex)
+        {
+            var simplifier = new MeshSimplifier();
+            simplifier.Initialize(sourceMesh);
+            int[] subTriangles = simplifier.GetSubMeshTriangles(subMeshIndex);
+
+            var mesh = new Mesh();
+            mesh.vertices = sourceMesh.vertices;
+            if (sourceMesh.normals != null && sourceMesh.normals.Length > 0) mesh.normals = sourceMesh.normals;
+            if (sourceMesh.tangents != null && sourceMesh.tangents.Length > 0) mesh.tangents = sourceMesh.tangents;
+            if (sourceMesh.uv != null && sourceMesh.uv.Length > 0) mesh.uv = sourceMesh.uv;
+            if (sourceMesh.uv2 != null && sourceMesh.uv2.Length > 0) mesh.uv2 = sourceMesh.uv2;
+            if (sourceMesh.uv3 != null && sourceMesh.uv3.Length > 0) mesh.uv3 = sourceMesh.uv3;
+            if (sourceMesh.uv4 != null && sourceMesh.uv4.Length > 0) mesh.uv4 = sourceMesh.uv4;
+            if (sourceMesh.colors != null && sourceMesh.colors.Length > 0) mesh.colors = sourceMesh.colors;
+            if (sourceMesh.boneWeights != null && sourceMesh.boneWeights.Length > 0) mesh.boneWeights = sourceMesh.boneWeights;
+            if (sourceMesh.bindposes != null && sourceMesh.bindposes.Length > 0) mesh.bindposes = sourceMesh.bindposes;
+
+            mesh.SetTriangles(subTriangles, 0);
+            return mesh;
+        }
+
+        private static Mesh CombineSubMeshesIntoMesh(List<(Mesh subMesh, int originalIndex)> subMeshes, string meshName)
+        {
+            var combineInstances = new List<CombineInstance>();
+            foreach (var item in subMeshes)
+            {
+                combineInstances.Add(new CombineInstance
+                {
+                    mesh = item.subMesh,
+                    transform = Matrix4x4.identity,
+                    subMeshIndex = 0
+                });
+            }
+
+            var combinedMesh = new Mesh();
+            combinedMesh.name = meshName;
+            combinedMesh.CombineMeshes(combineInstances.ToArray(), false, true);
+            return combinedMesh;
         }
 
         #endregion

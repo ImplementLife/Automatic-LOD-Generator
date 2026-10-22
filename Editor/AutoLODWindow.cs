@@ -410,6 +410,8 @@ namespace Plugins.AutoLODGenerator.Editor
                 EditorGUI.indentLevel--;
             }
 
+            DrawPerSubMeshSettings();
+
             EditorGUILayout.EndVertical();
         }
 
@@ -504,6 +506,108 @@ namespace Plugins.AutoLODGenerator.Editor
                 "Tip: Enable 'Preserve Borders' and 'Preserve UV Seams' for best visual quality. " +
                 "Disable them for maximum polygon reduction.",
                 MessageType.Info);
+        }
+
+        private void DrawPerSubMeshSettings()
+        {
+            if (_selectedObjects.Count != 1) return;
+
+            var stats = LODGeneratorCore.GetMeshStatistics(_selectedObjects[0]);
+            if (stats.type == MeshRendererType.None) return;
+
+            Mesh mesh = null;
+            Material[] materials = null;
+            if (stats.type == MeshRendererType.MeshRenderer)
+            {
+                var mf = _selectedObjects[0].GetComponent<MeshFilter>();
+                var mr = _selectedObjects[0].GetComponent<MeshRenderer>();
+                if (mf != null) mesh = mf.sharedMesh;
+                if (mr != null) materials = mr.sharedMaterials;
+            }
+            else if (stats.type == MeshRendererType.SkinnedMeshRenderer)
+            {
+                var smr = _selectedObjects[0].GetComponent<SkinnedMeshRenderer>();
+                if (smr != null)
+                {
+                    mesh = smr.sharedMesh;
+                    materials = smr.sharedMaterials;
+                }
+            }
+
+            if (mesh == null || mesh.subMeshCount <= 1)
+            {
+                _settings.usePerSubMeshSettings = false;
+                return;
+            }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Per-SubMesh LOD Settings", EditorStyles.boldLabel);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            EditorGUI.BeginChangeCheck();
+            _settings.usePerSubMeshSettings = EditorGUILayout.Toggle("Customize Per-SubMesh", _settings.usePerSubMeshSettings);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (_settings.usePerSubMeshSettings && (_settings.subMeshSettings == null || _settings.subMeshSettings.Count != mesh.subMeshCount))
+                {
+                    _settings.InitializeSubMeshSettings(mesh, materials);
+                }
+                _selectedPreset = LODPreset.Custom;
+            }
+
+            if (_settings.usePerSubMeshSettings)
+            {
+                EditorGUI.indentLevel++;
+                if (_settings.subMeshSettings == null || _settings.subMeshSettings.Count != mesh.subMeshCount)
+                {
+                    _settings.InitializeSubMeshSettings(mesh, materials);
+                }
+
+                for (int i = 0; i < _settings.subMeshSettings.Count; i++)
+                {
+                    var subSetting = _settings.subMeshSettings[i];
+                    EditorGUILayout.Space(3);
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                    subSetting.useCustomQuality = EditorGUILayout.Foldout(subSetting.useCustomQuality, subSetting.subMeshName, true);
+                    if (subSetting.useCustomQuality)
+                    {
+                        EditorGUI.indentLevel++;
+
+                        for (int l = 1; l < _settings.lodLevelCount; l++)
+                        {
+                            EditorGUI.BeginChangeCheck();
+                            subSetting.qualityFactors[l] = EditorGUILayout.Slider($"LOD{l} Quality", subSetting.qualityFactors[l], 0.01f, 1f);
+                            if (EditorGUI.EndChangeCheck()) _selectedPreset = LODPreset.Custom;
+                        }
+
+                        subSetting.overrideSimplification = EditorGUILayout.Foldout(subSetting.overrideSimplification, "Advanced Simplification", true);
+                        if (subSetting.overrideSimplification)
+                        {
+                            EditorGUI.indentLevel++;
+                            subSetting.enableSmartLink = EditorGUILayout.Toggle("Enable Smart Link", subSetting.enableSmartLink);
+                            if (subSetting.enableSmartLink)
+                            {
+                                var linkDist = (float)subSetting.vertexLinkDistance;
+                                linkDist = EditorGUILayout.Slider("Vertex Link Distance", linkDist, 0f, 0.001f);
+                                subSetting.vertexLinkDistance = linkDist;
+                            }
+                            subSetting.preserveBorders = EditorGUILayout.Toggle("Preserve Borders", subSetting.preserveBorders);
+                            subSetting.preserveSeams = EditorGUILayout.Toggle("Preserve UV Seams", subSetting.preserveSeams);
+                            subSetting.preserveFoldovers = EditorGUILayout.Toggle("Preserve UV Foldovers", subSetting.preserveFoldovers);
+                            EditorGUI.indentLevel--;
+                        }
+
+                        EditorGUI.indentLevel--;
+                    }
+
+                    EditorGUILayout.EndVertical();
+                }
+
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawSaveOptions(ref bool showSaveOptions)

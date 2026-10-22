@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
@@ -75,6 +76,40 @@ namespace Plugins.AutoLODGenerator.Editor
         /// </summary>
         [Tooltip("Preserve UV foldover edges (prevents UV distortion on overlapping UVs)")]
         public bool preserveFoldovers = false;
+
+        /// <summary>
+        /// Whether to use individual settings per submesh.
+        /// </summary>
+        public bool usePerSubMeshSettings = false;
+
+        /// <summary>
+        /// Settings for each submesh.
+        /// </summary>
+        public List<SubMeshLODSettings> subMeshSettings = new List<SubMeshLODSettings>();
+
+        /// <summary>
+        /// Initializes submesh settings for a given mesh and materials.
+        /// </summary>
+        public void InitializeSubMeshSettings(Mesh mesh, Material[] materials)
+        {
+            if (mesh == null) return;
+
+            subMeshSettings.Clear();
+            for (int i = 0; i < mesh.subMeshCount; i++)
+            {
+                string matName = (materials != null && i < materials.Length && materials[i] != null)
+                    ? materials[i].name
+                    : $"Submesh {i}";
+
+                subMeshSettings.Add(new SubMeshLODSettings
+                {
+                    subMeshIndex = i,
+                    subMeshName = $"[{i}] {matName}",
+                    useCustomQuality = false,
+                    qualityFactors = (float[])qualityFactors.Clone()
+                });
+            }
+        }
 
         #endregion
 
@@ -486,6 +521,19 @@ namespace Plugins.AutoLODGenerator.Editor
             var json = JsonUtility.ToJson(this);
             var clone = new LODGeneratorSettings();
             JsonUtility.FromJsonOverwrite(json, clone);
+            clone.subMeshSettings = new List<SubMeshLODSettings>();
+            if (subMeshSettings != null)
+            {
+                foreach (var sms in subMeshSettings)
+                {
+                    var smsJson = JsonUtility.ToJson(sms);
+                    var smsClone = new SubMeshLODSettings();
+                    JsonUtility.FromJsonOverwrite(smsJson, smsClone);
+                    if (sms.qualityFactors != null)
+                        smsClone.qualityFactors = (float[])sms.qualityFactors.Clone();
+                    clone.subMeshSettings.Add(smsClone);
+                }
+            }
             return clone;
         }
 
@@ -510,6 +558,59 @@ namespace Plugins.AutoLODGenerator.Editor
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Configuration settings for a specific submesh.
+    /// </summary>
+    [Serializable]
+    public class SubMeshLODSettings
+    {
+        public int subMeshIndex;
+        public string subMeshName = "Submesh";
+        public bool useCustomQuality = false;
+        public float[] qualityFactors = { 1.0f, 0.6f, 0.4f, 0.2f, 0.1f, 0.05f };
+
+        public bool overrideSimplification = false;
+        public bool enableSmartLink = true;
+        public double vertexLinkDistance = double.Epsilon;
+        public bool preserveBorders = false;
+        public bool preserveSeams = false;
+        public bool preserveFoldovers = false;
+
+        public float GetQualityFactor(int lodLevel, float globalQuality)
+        {
+            if (!useCustomQuality)
+                return globalQuality;
+
+            if (lodLevel == 0)
+                return 1.0f;
+
+            if (qualityFactors != null && lodLevel < qualityFactors.Length)
+                return qualityFactors[lodLevel];
+
+            return globalQuality;
+        }
+
+        public SimplificationOptions CreateSimplificationOptions(LODGeneratorSettings globalSettings)
+        {
+            if (!overrideSimplification)
+                return globalSettings.CreateSimplificationOptions();
+
+            return new SimplificationOptions
+            {
+                EnableSmartLink = enableSmartLink,
+                VertexLinkDistance = vertexLinkDistance,
+                PreserveBorderEdges = preserveBorders,
+                PreserveUVSeamEdges = preserveSeams,
+                PreserveUVFoldoverEdges = preserveFoldovers,
+                MaxIterationCount = 100,
+                Agressiveness = 7.0,
+                PreserveSurfaceCurvature = false,
+                ManualUVComponentCount = false,
+                UVComponentCount = 2
+            };
+        }
     }
 
     /// <summary>
