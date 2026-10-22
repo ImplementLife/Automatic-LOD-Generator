@@ -1,12 +1,12 @@
 {
-  "name": "com.manaporkun.auto-lod-generator",
+  "name": "com.implementlife.auto-lod-generator",
   "version": "2.2.2",
-  "displayName": "Auto LOD Generator",
-  "description": "Automatic Level of Detail (LOD) generator and mesh simplifier for Unity. Generate optimized LOD groups with configurable presets, batch processing, and skinned mesh support.",
+  "displayName": "Auto LOD Generator Personal Fork",
+  "description": "A personal fork of Auto LOD Generator with custom workflow tweaks and per-mesh LOD configuration support for multi-mesh models.",
   "unity": "2021.3",
-  "documentationUrl": "https://github.com/manaporkun/Automatic-LOD-Generator#readme",
-  "changelogUrl": "https://github.com/manaporkun/Automatic-LOD-Generator/blob/main/CHANGELOG.md",
-  "licensesUrl": "https://github.com/manaporkun/Automatic-LOD-Generator/blob/main/LICENSE",
+  "documentationUrl": "https://github.com/ImplementLife/Automatic-LOD-Generator#readme",
+  "changelogUrl": "https://github.com/ImplementLife/Automatic-LOD-Generator/releases",
+  "licensesUrl": "https://github.com/ImplementLife/Automatic-LOD-Generator/blob/main/LICENSE",
   "dependencies": {},
   "keywords": [
     "lod",
@@ -14,15 +14,16 @@
     "mesh-simplification",
     "optimization",
     "performance",
-    "editor-tool"
+    "editor-tool",
+    "personal-fork"
   ],
   "author": {
-    "name": "manaporkun",
-    "url": "https://github.com/manaporkun"
+    "name": "ImplementLife",
+    "url": "https://github.com/ImplementLife"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/manaporkun/Automatic-LOD-Generator.git"
+    "url": "https://github.com/ImplementLife/Automatic-LOD-Generator.git"
   },
   "samples": [
     {

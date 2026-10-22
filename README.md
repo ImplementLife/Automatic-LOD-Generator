@@ -1,222 +1,52 @@
 # Auto LOD Generator
 
+Personal fork for custom Unity workflow and mesh-specific LOD behavior.
+
 [![Unity](https://img.shields.io/badge/Unity-2021.3%2B-black.svg)](https://unity.com/)
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/manaporkun/Automatic-LOD-Generator?include_prereleases)](https://github.com/manaporkun/Automatic-LOD-Generator/releases)
-[![CI](https://github.com/manaporkun/Automatic-LOD-Generator/actions/workflows/ci.yml/badge.svg)](https://github.com/manaporkun/Automatic-LOD-Generator/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-18%20passing-brightgreen.svg)](Editor/Tests)
 
-**Automatic Level of Detail (LOD) generator and mesh simplifier for Unity.**
+This repository is a cleaned-up fork of the original Auto LOD Generator project. The goal is to keep the Unity package lean, remove upstream CI/release automation noise, and add custom workflow tweaks for personal use.
 
-Transform complex 3D meshes into optimized LOD groups with just a few clicks. Perfect for game developers who want to improve performance without manually creating multiple mesh versions.
+## Why this fork exists
 
-<img src=".github/screenshot.png" width="100%">
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Why Use Auto LOD Generator?](#why-use-auto-lod-generator)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Presets](#presets)
-- [Menu Reference](#menu-reference)
-- [Advanced Features](#advanced-features)
-- [API Usage](#api-usage)
-- [Requirements](#requirements)
-- [Troubleshooting](#troubleshooting)
-- [FAQ](#faq)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [License](#license)
-
----
-
-## Features
-
-### Core Features
-- **One-Click LOD Generation** - Automatically create LOD groups with configurable quality levels
-- **Batch Processing** - Process multiple objects at once for efficient workflow
-- **6 Built-in Presets** - Pre-configured settings for different platforms and use cases
-- **Customizable LOD Levels** - Configure 2-6 LOD levels with individual quality settings
-- **Real-time Preview** - See estimated vertex/triangle counts before generation
-
-### Mesh Support
-- **Static Meshes** - Full support for MeshFilter + MeshRenderer objects
-- **Skinned Meshes** - Full support for SkinnedMeshRenderer (animated characters)
-- **Composite Models** - Supports imported prefab/model roots with mesh renderers on child objects
-- **Save to Assets** - Export generated meshes as reusable .asset files
-
-### Workflow
-- **Drag & Drop Support** - Simply drag objects from hierarchy or project window
-- **Context Menu Integration** - Right-click on objects for quick access
-- **Keyboard Shortcuts** - Speed up your workflow with hotkeys (`Ctrl+Alt+L` / `Cmd+Alt+L`)
-- **Undo Support** - Full integration with Unity's undo system
-- **Custom Presets** - Save and load your own preset configurations
-
----
-
-## Why Use Auto LOD Generator?
-
-| Aspect | Without LOD | With Auto LOD |
-|--------|-------------|---------------|
-| **Draw Calls** | 1 high-poly mesh always rendered | 1 appropriate mesh based on distance |
-| **Memory** | Full mesh in GPU memory | Smaller meshes at distance |
-| **FPS Impact** | High on low-end devices | Optimized for all devices |
-| **Setup Time** | Hours of manual work | Seconds with presets |
-
-### Performance Example
-A character with 10,000 triangles:
-- **LOD0** (close): 10,000 triangles - 100% quality
-- **LOD1** (medium): 6,500 triangles - 65% quality
-- **LOD2** (far): 2,000 triangles - 20% quality
-- **LOD3** (very far): Culled (0 triangles)
-
-**Result**: Up to 80% reduction in GPU workload at distance.
-
----
+- keep the package focused on the Unity editor workflow
+- remove unrelated GitHub automation from the repository
+- support custom per-mesh LOD configuration for multi-mesh models
+- keep the project compatible with the original GPL v3 license terms
 
 ## Installation
 
-### Unity Package Manager (Recommended)
+### Unity Package Manager
 
-1. Open **Window > Package Manager**
-2. Click **+ > Add package from git URL**
-3. Enter:
-   ```
-   https://github.com/manaporkun/Automatic-LOD-Generator.git
-   ```
+1. Open Window > Package Manager
+2. Click + > Add package from disk
+3. Select the repository root folder containing package.json
 
-The required [UnityMeshSimplifier](https://github.com/Whinarn/UnityMeshSimplifier/) dependency is installed automatically.
+### Required dependency
 
-> **Note**: To install a specific version, append the tag to the URL:
-> ```
-> https://github.com/manaporkun/Automatic-LOD-Generator.git#v2.1.1
-> ```
+This package expects the UnityMeshSimplifier dependency to be available in the project. If it is not installed automatically, add it manually from the upstream dependency source.
 
-### Manual Installation
+## Basic usage
 
-1. Download `Auto-LOD-Generator.unitypackage` from the [Releases page](https://github.com/manaporkun/Automatic-LOD-Generator/releases)
-2. In Unity, go to **Assets > Import Package > Custom Package**
-3. Select the downloaded file and import (the dependency will be installed automatically)
+1. Open Tools > Auto LOD Generator
+2. Select a mesh-bearing GameObject in the scene or hierarchy
+3. Choose a preset or adjust the config
+4. Generate the LOD group
 
-### Development Installation
+## Notes for this fork
 
-For contributing or modifying the source:
+This fork intentionally keeps a minimal repository layout for personal use:
 
-1. Clone this repository
-2. In Unity Package Manager, click **+ > Add package from disk**
-3. Select the `package.json` at the repository root
+- no automated release workflow
+- no upstream CI noise
+- no contributor automation boilerplate
+- only the Unity package code and fork-specific documentation remain
 
----
+## License
 
-## Quick Start
+This project remains under the GNU General Public License v3.0.
 
-### Using the Main Window
-
-1. Open **Tools > Auto LOD Generator > Open Window**
-2. Select a GameObject with a mesh in your scene
-3. Choose a preset or customize settings
-4. Click **Generate LOD Group**
-
-### Using Context Menu (Fastest)
-
-1. Right-click on any mesh object in the Hierarchy
-2. Select **Auto LOD > Generate LOD Group**
-
-### Using Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Alt+L` (Windows) / `Cmd+Alt+L` (Mac) | Quick Generate LOD Group |
-
----
-
-## Presets
-
-| Preset | LOD Levels | Best For |
-|--------|------------|----------|
-| **Performance** | 3 | Maximum FPS, aggressive simplification |
-| **Balanced** | 4 | General use, good quality/performance balance (default) |
-| **Quality** | 5 | Visual fidelity, gradual transitions |
-| **Mobile (Low-end)** | 2 | Budget mobile devices |
-| **Mobile (High-end)** | 3 | Modern mobile devices |
-| **VR** | 4 | VR applications, avoids LOD popping |
-
-### Quality Factor Guide
-
-The quality factor determines how much the mesh is simplified:
-
-| Quality | Triangle Reduction | Use Case |
-|---------|-------------------|----------|
-| 1.0 | 0% (original) | LOD0 - Always keep original |
-| 0.75 | ~25% | LOD1 - Close distance |
-| 0.5 | ~50% | LOD2 - Medium distance |
-| 0.25 | ~75% | LOD3 - Far distance |
-| 0.1 | ~90% | LOD4 - Very far distance |
-
-### Mesh Simplification Options
-
-Advanced options to control the mesh simplification algorithm:
-
-| Option | Description | Recommended Use |
-|--------|-------------|-----------------|
-| **Enable Smart Link** | Links close vertices to prevent holes in simplified meshes | Always enabled (default) |
-| **Vertex Link Distance** | Max distance for vertex linking | Increase for very large meshes |
-| **Preserve Borders** | Preserves mesh edge boundaries | Architectural meshes, terrain |
-| **Preserve UV Seams** | Prevents UV stretching at texture seams | Characters with seam-based UVs |
-| **Preserve UV Foldovers** | Prevents distortion on overlapping UVs | Complex UV layouts |
-
-**Preset Defaults:**
-- **Performance**: Minimal preservation for maximum reduction
-- **Quality/VR**: Borders and seams preserved for best visuals
-- **Balanced**: Smart linking only
-
-### Custom Presets
-
-You can save your own custom presets:
-
-1. Open the main window
-2. Go to the **Presets** tab
-3. Configure your settings
-4. Enter a name and click **Save**
-
-**Preset Storage Location**: Custom presets are saved to `Assets/Editor/AutoLODGenerator/Presets/` by default. This ensures they persist across package updates. You can change this location in the Presets tab.
-
----
-
-## Menu Reference
-
-### Tools Menu
-| Menu Item | Description |
-|-----------|-------------|
-| `Tools > Auto LOD Generator > Open Window` | Main interface |
-| `Tools > Auto LOD Generator > Quick Generate LOD Group` | Generate with Balanced preset |
-| `Tools > Auto LOD Generator > Quick Simplify (50%)` | Create 50% simplified mesh |
-| `Tools > Auto LOD Generator > Generate with Preset > ...` | Generate with specific preset |
-
-### Context Menu (Right-click in Hierarchy)
-| Menu Item | Description |
-|-----------|-------------|
-| `Auto LOD > Generate LOD Group` | Generate LOD group |
-| `Auto LOD > Simplify Mesh (50%)` | Create 50% simplified version |
-| `Auto LOD > Simplify Mesh (25%)` | Create 25% simplified version |
-| `Auto LOD > Open Generator Window...` | Open main window |
-
----
-
-## Advanced Features
-
-### Save Meshes to Assets
-
-Enable **Save Meshes to Assets** in the Save Options section to:
-- Export generated LOD meshes as `.asset` files
-- Reuse meshes across multiple prefabs
-- Reduce scene file size
-- **Default save location**: `Assets/GeneratedLODs/<ModelName>/`
-
-### Skinned Mesh Support
+See [LICENSE](LICENSE) for the full license text.
 
 The plugin automatically detects and handles both static and skinned meshes:
 
