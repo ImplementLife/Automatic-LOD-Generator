@@ -1,8 +1,8 @@
 {
-  "name": "com.implementlife.auto-lod-generator",
-  "version": "2.2.2",
-  "displayName": "Auto LOD Generator Personal Fork",
-  "description": "A personal fork of Auto LOD Generator with custom workflow tweaks and per-mesh LOD configuration support for multi-mesh models.",
+  "name": "com.implementlife.lod-generator",
+  "version": "2.2.2-fork.1",
+  "displayName": "LOD Generator",
+  "description": "Fork of Auto LOD Generator with custom workflow tweaks and per-submesh/per-mesh LOD configuration support.",
   "unity": "2021.3",
   "documentationUrl": "https://github.com/ImplementLife/Automatic-LOD-Generator#readme",
   "changelogUrl": "https://github.com/ImplementLife/Automatic-LOD-Generator/releases",
@@ -15,7 +15,7 @@
     "optimization",
     "performance",
     "editor-tool",
-    "personal-fork"
+    "fork"
   ],
   "author": {
     "name": "ImplementLife",
