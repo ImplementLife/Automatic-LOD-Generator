@@ -5,6 +5,11 @@ All notable changes to Auto LOD Generator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2-fork.1] - 2026-10-22
+
+### Added
+- per-submesh / per-mesh LOD configuration support for multi-part models
+
 ## [2.2.2] - 2026-04-30
 
 ### Changed
